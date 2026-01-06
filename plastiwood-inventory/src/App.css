@@ -1,0 +1,81 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f5f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  margin-top: 70px; /* Account for fixed header */
+  overflow-y: auto;
+  background: white;
+  min-height: calc(100vh - 70px);
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+  }
+}
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+/* Global styles for all components to work with header */
+.sales, .orders, .purchases, .inventory, .dashboard {
+  padding-top: 0;
+  margin-top: 0;
+}
+
+/* Ensure proper spacing for all page components */
+.sales-header, .orders-header, .purchases-header, .inventory-header {
+  margin-top: 0;
+  padding-top: 1rem;
+}
+
+/* Smooth transitions for menu interactions */
+* {
+  transition: all 0.3s ease;
+}
+
+/* Ensure proper z-index stacking */
+.header {
+  z-index: 1000;
+}
+
+.menu-overlay {
+  z-index: 1001;
+}
+
+.hamburger-menu {
+  z-index: 1002;
+}
