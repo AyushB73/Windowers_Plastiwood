@@ -94,7 +94,7 @@ const createTables = async () => {
       )
     `);
 
-    // Purchases table
+    // Purchases table (without foreign key initially)
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS purchases (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -110,8 +110,7 @@ const createTables = async () => {
         receipt_file LONGTEXT,
         receipt_filename VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (supplier_gstin) REFERENCES suppliers(gstin) ON UPDATE CASCADE
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
 
@@ -133,7 +132,7 @@ const createTables = async () => {
       )
     `);
 
-    // Sales/Invoices table
+    // Sales/Invoices table (without foreign key initially)
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS invoices (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -149,8 +148,7 @@ const createTables = async () => {
         pending_amount DECIMAL(12,2) GENERATED ALWAYS AS (total_amount - paid_amount) STORED,
         status ENUM('paid', 'pending', 'partial') DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (customer_gstin) REFERENCES customers(gstin) ON UPDATE CASCADE
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
 
@@ -169,7 +167,7 @@ const createTables = async () => {
       )
     `);
 
-    // Orders table
+    // Orders table (without foreign key initially)
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS orders (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -183,8 +181,7 @@ const createTables = async () => {
         total_amount DECIMAL(12,2) NOT NULL,
         invoice_id INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON SET NULL
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
 
