@@ -49,7 +49,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files from React build
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
+  const distPath = path.join(__dirname, '../dist');
+  console.log('📁 Serving static files from:', distPath);
+  app.use(express.static(distPath));
+  
+  // Check if dist folder exists
+  const fs = require('fs');
+  if (fs.existsSync(distPath)) {
+    console.log('✅ dist folder found');
+    const files = fs.readdirSync(distPath);
+    console.log('📄 Files in dist:', files);
+  } else {
+    console.log('❌ dist folder not found');
+  }
 }
 
 // Health check endpoint
@@ -73,7 +85,30 @@ app.use('/api/company', companyRoutes);
 // Serve React app for all non-API routes (production only)
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    console.log('🔍 Serving index.html from:', indexPath);
+    
+    const fs = require('fs');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.log('❌ index.html not found');
+      res.status(404).send(`
+        <h1>Frontend Not Built</h1>
+        <p>The React frontend was not built properly.</p>
+        <p>Expected file: ${indexPath}</p>
+        <p><a href="/health">Check server health</a></p>
+      `);
+    }
+  });
+} else {
+  // Development mode - show helpful message
+  app.get('*', (req, res) => {
+    res.send(`
+      <h1>Development Mode</h1>
+      <p>Server is running in development mode.</p>
+      <p><a href="/health">Check server health</a></p>
+    `);
   });
 }
 

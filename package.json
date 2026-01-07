@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "vite preview --port 4173 --host"
+    "start": "vite preview --port 4173 --host",
+    "postinstall": "cd server && npm install",
+    "railway:build": "node build.js"
   },
   "dependencies": {
     "react": "^18.2.0",

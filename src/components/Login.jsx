@@ -1,58 +1,63 @@
 import { useState } from 'react';
-import { useObjectDataSync } from '../hooks/useDataSync';
-import { DATA_KEYS } from '../utils/dataSync';
+import { authAPI } from '../services/api';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: ''
+  });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Use synchronized user data
-  const { data: users } = useObjectDataSync(DATA_KEYS.USERS, {
-    pramod: { password: 'owner123', role: 'owner', name: 'Pramod', email: 'pramod@plastiwood.com', phone: '+91 9876543210' },
-    staff: { password: 'staff123', role: 'staff', name: 'Staff', email: 'staff@plastiwood.com', phone: '+91 9876543211' }
-  });
-
-  const handleLogin = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError('');
 
-    const user = users[username.toLowerCase()];
-    if (user && user.password === password) {
-      const userData = {
-        username: username.toLowerCase(),
-        role: user.role,
-        name: user.name,
-        email: user.email,
-        phone: user.phone
-      };
-      localStorage.setItem('currentUser', JSON.stringify(userData));
-      onLogin(userData);
-    } else {
-      setError('Invalid username or password');
+    try {
+      const response = await authAPI.login(credentials.username, credentials.password);
+      onLogin(response.user);
+    } catch (error) {
+      setError(error.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleChange = (e) => {
+    setCredentials({
+      ...credentials,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <div className="login-logo">🏭</div>
           <h1>Windowers Plastiwood</h1>
           <p>Inventory Management System</p>
         </div>
 
-        <form onSubmit={handleLogin} className="login-form">
+        <form onSubmit={handleSubmit} className="login-form">
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
               type="text"
               id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter username"
+              name="username"
+              value={credentials.username}
+              onChange={handleChange}
+              className="form-control"
               required
+              disabled={loading}
             />
           </div>
 
@@ -61,17 +66,31 @@ const Login = ({ onLogin }) => {
             <input
               type="password"
               id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
+              name="password"
+              value={credentials.password}
+              onChange={handleChange}
+              className="form-control"
               required
+              disabled={loading}
             />
           </div>
 
-          {error && <div className="error-message">{error}</div>}
-
-          <button type="submit" className="login-btn">Login</button>
+          <button
+            type="submit"
+            className="btn btn-primary login-btn"
+            disabled={loading}
+          >
+            {loading ? 'Signing In...' : 'Sign In'}
+          </button>
         </form>
+
+        <div className="login-footer">
+          <div className="demo-credentials">
+            <h4>Demo Credentials:</h4>
+            <p><strong>Owner:</strong> pramod / admin123</p>
+            <p><strong>Staff:</strong> staff / staff123</p>
+          </div>
+        </div>
       </div>
     </div>
   );

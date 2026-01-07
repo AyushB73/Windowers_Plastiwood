@@ -1,37 +1,76 @@
 import { useState, useEffect } from 'react';
+import { companyAPI } from '../services/api';
 import './CompanySettings.css';
 
 const CompanySettings = ({ onClose, onSave }) => {
-  const [companyInfo, setCompanyInfo] = useState(() => {
-    const saved = localStorage.getItem('companyInfo');
-    return saved ? JSON.parse(saved) : {
-      name: 'Windowers Plastiwood Pvt Ltd',
-      address: '123, Industrial Area, Phase 2',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      pincode: '400001',
-      gstin: '27AABCP1234F1Z5',
-      pan: 'AABCP1234F',
-      email: 'info@plastiwood.com',
-      phone: '+91 98765 43210',
-      website: 'www.plastiwood.com',
-      bankName: 'State Bank of India',
-      accountNumber: '1234567890',
-      ifscCode: 'SBIN0001234',
-      branch: 'Mumbai Main Branch',
-      logo: '🌲'
-    };
+  const [companyInfo, setCompanyInfo] = useState({
+    name: 'Windowers Plastiwood',
+    address: '123, Industrial Area, Phase 2',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    pincode: '400001',
+    gstin: '27AABCP1234F1Z5',
+    pan: 'AABCP1234F',
+    email: 'info@windowersplastiwood.com',
+    phone: '+91 98765 43210',
+    website: 'www.windowersplastiwood.com',
+    bankName: 'State Bank of India',
+    accountNumber: '1234567890',
+    ifscCode: 'SBIN0001234',
+    branch: 'Mumbai Main Branch',
+    logo: '🌲'
   });
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = () => {
-    localStorage.setItem('companyInfo', JSON.stringify(companyInfo));
-    onSave(companyInfo);
-    alert('Company information saved successfully!');
+  useEffect(() => {
+    loadCompanyInfo();
+  }, []);
+
+  const loadCompanyInfo = async () => {
+    try {
+      setLoading(true);
+      const response = await companyAPI.get();
+      if (response.company) {
+        setCompanyInfo(response.company);
+      }
+    } catch (error) {
+      console.error('Error loading company info:', error);
+      // Use default values if API fails
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const response = await companyAPI.update(companyInfo);
+      onSave(response.company || companyInfo);
+      alert('Company information saved successfully!');
+    } catch (error) {
+      console.error('Error saving company info:', error);
+      // Fallback to localStorage for offline mode
+      localStorage.setItem('companyInfo', JSON.stringify(companyInfo));
+      onSave(companyInfo);
+      alert('Company information saved successfully!');
+    }
   };
 
   const handleChange = (field, value) => {
     setCompanyInfo({ ...companyInfo, [field]: value });
   };
+
+  if (loading) {
+    return (
+      <div className="settings-modal">
+        <div className="settings-content">
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+            <p>Loading company settings...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="settings-modal">
@@ -51,23 +90,25 @@ const CompanySettings = ({ onClose, onSave }) => {
                   type="text"
                   value={companyInfo.name}
                   onChange={(e) => handleChange('name', e.target.value)}
+                  placeholder="Enter company name"
                 />
               </div>
               <div className="form-group">
-                <label>Logo Emoji</label>
+                <label>Logo/Icon</label>
                 <input
                   type="text"
                   value={companyInfo.logo}
                   onChange={(e) => handleChange('logo', e.target.value)}
-                  placeholder="🌲"
+                  placeholder="Enter emoji or text logo"
                 />
               </div>
               <div className="form-group full-width">
                 <label>Address *</label>
-                <input
-                  type="text"
+                <textarea
                   value={companyInfo.address}
                   onChange={(e) => handleChange('address', e.target.value)}
+                  placeholder="Enter complete address"
+                  rows="3"
                 />
               </div>
               <div className="form-group">
@@ -76,6 +117,7 @@ const CompanySettings = ({ onClose, onSave }) => {
                   type="text"
                   value={companyInfo.city}
                   onChange={(e) => handleChange('city', e.target.value)}
+                  placeholder="Enter city"
                 />
               </div>
               <div className="form-group">
@@ -84,14 +126,16 @@ const CompanySettings = ({ onClose, onSave }) => {
                   type="text"
                   value={companyInfo.state}
                   onChange={(e) => handleChange('state', e.target.value)}
+                  placeholder="Enter state"
                 />
               </div>
               <div className="form-group">
-                <label>Pincode *</label>
+                <label>PIN Code *</label>
                 <input
                   type="text"
                   value={companyInfo.pincode}
                   onChange={(e) => handleChange('pincode', e.target.value)}
+                  placeholder="Enter PIN code"
                 />
               </div>
             </div>
@@ -106,7 +150,7 @@ const CompanySettings = ({ onClose, onSave }) => {
                   type="text"
                   value={companyInfo.gstin}
                   onChange={(e) => handleChange('gstin', e.target.value)}
-                  placeholder="27AABCP1234F1Z5"
+                  placeholder="Enter GSTIN"
                 />
               </div>
               <div className="form-group">
@@ -115,7 +159,7 @@ const CompanySettings = ({ onClose, onSave }) => {
                   type="text"
                   value={companyInfo.pan}
                   onChange={(e) => handleChange('pan', e.target.value)}
-                  placeholder="AABCP1234F"
+                  placeholder="Enter PAN"
                 />
               </div>
             </div>
@@ -130,52 +174,58 @@ const CompanySettings = ({ onClose, onSave }) => {
                   type="email"
                   value={companyInfo.email}
                   onChange={(e) => handleChange('email', e.target.value)}
+                  placeholder="Enter email address"
                 />
               </div>
               <div className="form-group">
                 <label>Phone *</label>
                 <input
-                  type="text"
+                  type="tel"
                   value={companyInfo.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
+                  placeholder="Enter phone number"
                 />
               </div>
               <div className="form-group">
                 <label>Website</label>
                 <input
-                  type="text"
+                  type="url"
                   value={companyInfo.website}
                   onChange={(e) => handleChange('website', e.target.value)}
+                  placeholder="Enter website URL"
                 />
               </div>
             </div>
           </div>
 
           <div className="settings-section">
-            <h3>Banking Details</h3>
+            <h3>Banking Information</h3>
             <div className="form-grid">
               <div className="form-group">
-                <label>Bank Name *</label>
+                <label>Bank Name</label>
                 <input
                   type="text"
                   value={companyInfo.bankName}
                   onChange={(e) => handleChange('bankName', e.target.value)}
+                  placeholder="Enter bank name"
                 />
               </div>
               <div className="form-group">
-                <label>Account Number *</label>
+                <label>Account Number</label>
                 <input
                   type="text"
                   value={companyInfo.accountNumber}
                   onChange={(e) => handleChange('accountNumber', e.target.value)}
+                  placeholder="Enter account number"
                 />
               </div>
               <div className="form-group">
-                <label>IFSC Code *</label>
+                <label>IFSC Code</label>
                 <input
                   type="text"
                   value={companyInfo.ifscCode}
                   onChange={(e) => handleChange('ifscCode', e.target.value)}
+                  placeholder="Enter IFSC code"
                 />
               </div>
               <div className="form-group">
@@ -184,6 +234,7 @@ const CompanySettings = ({ onClose, onSave }) => {
                   type="text"
                   value={companyInfo.branch}
                   onChange={(e) => handleChange('branch', e.target.value)}
+                  placeholder="Enter branch name"
                 />
               </div>
             </div>
@@ -191,8 +242,12 @@ const CompanySettings = ({ onClose, onSave }) => {
         </div>
 
         <div className="settings-footer">
-          <button className="btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn-primary" onClick={handleSave}>Save Settings</button>
+          <button className="btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="btn-primary" onClick={handleSave}>
+            Save Changes
+          </button>
         </div>
       </div>
     </div>

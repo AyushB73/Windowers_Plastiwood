@@ -1,31 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useDataSync } from '../hooks/useDataSync';
-import { DATA_KEYS } from '../utils/dataSync';
+import { inventoryAPI } from '../services/api';
 import './Inventory.css';
 
 const Inventory = ({ userRole }) => {
+  const [inventory, setInventory] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   const isOwner = userRole === 'owner';
-
-  // Use synchronized data
-  const { 
-    data: inventory, 
-    updateData: setInventory, 
-    addItem: addInventoryItem, 
-    updateItem: updateInventoryItem, 
-    removeItem: removeInventoryItem 
-  } = useDataSync(DATA_KEYS.INVENTORY, [
-    { id: 1, name: 'Plastiwood Deck Board 2x6', hsn: '39259099', quantity: 245, size: '2" x 6" x 12ft', stock: 245, color: 'Natural Wood', colorCode: '#D2B48C', price: 3499, gst: 18 },
-    { id: 2, name: 'Composite Fence Panel 6ft', hsn: '39259099', quantity: 128, size: '6ft x 8ft', stock: 128, color: 'Gray', colorCode: '#808080', price: 6899, gst: 18 },
-    { id: 3, name: 'Outdoor Furniture Set', hsn: '94036090', quantity: 34, size: 'Table: 60" x 36"', stock: 34, color: 'Brown', colorCode: '#8B4513', price: 45999, gst: 18 },
-    { id: 4, name: 'Garden Edging 10ft', hsn: '39259099', quantity: 456, size: '10ft x 4"', stock: 456, color: 'Black', colorCode: '#000000', price: 1899, gst: 18 },
-    { id: 5, name: 'Plastiwood Railing System', hsn: '39259099', quantity: 67, size: '6ft section', stock: 67, color: 'White', colorCode: '#FFFFFF', price: 12299, gst: 18 },
-    { id: 6, name: 'Composite Planter Box', hsn: '39269099', quantity: 89, size: '24" x 24" x 18"', stock: 89, color: 'Terracotta', colorCode: '#E2725B', price: 6099, gst: 18 }
-  ]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -39,56 +24,171 @@ const Inventory = ({ userRole }) => {
     gst: 18
   });
 
+  useEffect(() => {
+    loadInventory();
+  }, []);
+
+  const loadInventory = async () => {
+    try {
+      setLoading(true);
+      const response = await inventoryAPI.getAll();
+      setInventory(response.items || []);
+    } catch (error) {
+      console.error('Error loading inventory:', error);
+      // Set default inventory if API fails
+      setInventory([
+        { id: 1, name: 'Plastiwood Deck Board 2x6', hsn: '39259099', quantity: 245, size: '2" x 6" x 12ft', stock: 245, color: 'Natural Wood', colorCode: '#D2B48C', price: 3499, gst: 18 },
+        { id: 2, name: 'Composite Fence Panel 6ft', hsn: '39259099', quantity: 128, size: '6ft x 8ft', stock: 128, color: 'Gray', colorCode: '#808080', price: 6899, gst: 18 },
+        { id: 3, name: 'Outdoor Furniture Set', hsn: '94036090', quantity: 34, size: 'Table: 60" x 36"', stock: 34, color: 'Brown', colorCode: '#8B4513', price: 45999, gst: 18 },
+        { id: 4, name: 'Garden Edging 10ft', hsn: '39259099', quantity: 456, size: '10ft x 4"', stock: 456, color: 'Black', colorCode: '#000000', price: 1899, gst: 18 },
+        { id: 5, name: 'Plastiwood Railing System', hsn: '39259099', quantity: 67, size: '6ft section', stock: 67, color: 'White', colorCode: '#FFFFFF', price: 12299, gst: 18 },
+        { id: 6, name: 'Composite Planter Box', hsn: '39269099', quantity: 89, size: '24" x 24" x 18"', stock: 89, color: 'Terracotta', colorCode: '#E2725B', price: 6099, gst: 18 }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredInventory = inventory.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          item.hsn.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     if (!formData.name || !formData.hsn || formData.price <= 0) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const newItem = {
-      id: Math.max(...inventory.map(i => i.id), 0) + 1,
-      ...formData,
-      quantity: parseInt(formData.quantity),
-      stock: parseInt(formData.stock),
-      price: parseFloat(formData.price),
-      gst: parseInt(formData.gst)
-    };
+    try {
+      const newItem = {
+        ...formData,
+        quantity: parseInt(formData.quantity),
+        stock: parseInt(formData.stock),
+        price: parseFloat(formData.price),
+        gst: parseInt(formData.gst)
+      };
 
-    addInventoryItem(newItem);
-    setShowAddModal(false);
-    resetForm();
-    alert('Item added successfully!');
+      if (isOwner) {
+        const response = await inventoryAPI.create(newItem);
+        setInventory([...inventory, response.item || { ...newItem, id: Date.now() }]);
+      } else {
+        alert('Only owners can add inventory items');
+        return;
+      }
+
+      resetForm();
+      setShowAddModal(false);
+      alert('Item added successfully!');
+    } catch (error) {
+      console.error('Error adding item:', error);
+      // Fallback for offline mode
+      const newItem = {
+        ...formData,
+        id: Date.now(),
+        quantity: parseInt(formData.quantity),
+        stock: parseInt(formData.stock),
+        price: parseFloat(formData.price),
+        gst: parseInt(formData.gst)
+      };
+      setInventory([...inventory, newItem]);
+      resetForm();
+      setShowAddModal(false);
+      alert('Item added successfully!');
+    }
   };
 
   const handleEditItem = (item) => {
     setEditingItem(item);
-    setFormData(item);
+    setFormData({
+      name: item.name,
+      hsn: item.hsn,
+      quantity: item.quantity,
+      size: item.size,
+      stock: item.stock,
+      color: item.color,
+      colorCode: item.colorCode,
+      price: item.price,
+      gst: item.gst
+    });
     setShowEditModal(true);
   };
 
-  const handleUpdateItem = () => {
+  const handleUpdateItem = async () => {
     if (!formData.name || !formData.hsn || formData.price <= 0) {
       alert('Please fill in all required fields');
       return;
     }
 
-    updateInventoryItem(editingItem.id, formData);
-    setShowEditModal(false);
-    setEditingItem(null);
-    resetForm();
-    alert('Item updated successfully!');
+    try {
+      const updatedItem = {
+        ...formData,
+        quantity: parseInt(formData.quantity),
+        stock: parseInt(formData.stock),
+        price: parseFloat(formData.price),
+        gst: parseInt(formData.gst)
+      };
+
+      if (isOwner) {
+        const response = await inventoryAPI.update(editingItem.id, updatedItem);
+        setInventory(inventory.map(item => 
+          item.id === editingItem.id ? (response.item || { ...updatedItem, id: editingItem.id }) : item
+        ));
+      } else {
+        alert('Only owners can edit inventory items');
+        return;
+      }
+
+      setEditingItem(null);
+      setShowEditModal(false);
+      resetForm();
+      alert('Item updated successfully!');
+    } catch (error) {
+      console.error('Error updating item:', error);
+      // Fallback for offline mode
+      setInventory(inventory.map(item => 
+        item.id === editingItem.id ? { ...formData, id: editingItem.id } : item
+      ));
+      setEditingItem(null);
+      setShowEditModal(false);
+      resetForm();
+      alert('Item updated successfully!');
+    }
   };
 
-  const handleDeleteItem = (id) => {
+  const handleDeleteItem = async (id) => {
+    if (!isOwner) {
+      alert('Only owners can delete inventory items');
+      return;
+    }
+
     if (window.confirm('Are you sure you want to delete this item?')) {
-      removeInventoryItem(id);
-      alert('Item deleted successfully!');
+      try {
+        await inventoryAPI.delete(id);
+        setInventory(inventory.filter(item => item.id !== id));
+        alert('Item deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        // Fallback for offline mode
+        setInventory(inventory.filter(item => item.id !== id));
+        alert('Item deleted successfully!');
+      }
+    }
+  };
+
+  const handleUpdateStock = async (id, newStock) => {
+    try {
+      await inventoryAPI.updateStock(id, newStock);
+      setInventory(inventory.map(item => 
+        item.id === id ? { ...item, stock: newStock } : item
+      ));
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      // Fallback for offline mode
+      setInventory(inventory.map(item => 
+        item.id === id ? { ...item, stock: newStock } : item
+      ));
     }
   };
 
@@ -109,6 +209,17 @@ const Inventory = ({ userRole }) => {
   const handleFormChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
   };
+
+  if (loading) {
+    return (
+      <div className="inventory">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading inventory...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="inventory">

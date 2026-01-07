@@ -1,6 +1,6 @@
 // API Configuration
 const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://windowers-plastiwood-production.railway.app/api'  // Replace with your actual Railway URL
+  ? '/api'  // Use relative path in production when served from same domain
   : 'http://localhost:3001/api';
 
 // Get auth token from localStorage
