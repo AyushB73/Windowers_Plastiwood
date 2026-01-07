@@ -97,24 +97,37 @@ const startServer = async () => {
   try {
     // Test database connection
     console.log('🔗 Testing database connection...');
-    await testConnection();
+    const dbConnected = await testConnection();
     
-    // Run migration
-    console.log('🗄️ Running database migration...');
-    const migrationSuccess = await createTables();
-    
-    if (!migrationSuccess) {
-      console.log('⚠️ Migration failed, but continuing to start server...');
+    if (dbConnected) {
+      // Run migration only if database is connected
+      console.log('🗄️ Running database migration...');
+      const migrationSuccess = await createTables();
+      
+      if (!migrationSuccess) {
+        console.log('⚠️ Migration failed, but continuing to start server...');
+      }
+    } else {
+      console.log('⚠️ Database not connected, skipping migration. Server will start anyway.');
     }
     
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      
+      if (!dbConnected) {
+        console.log('⚠️ Database connection failed - please check environment variables');
+        console.log('Required variables: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME');
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1);
+    // Don't exit, just start the server anyway
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT} (with errors)`);
+      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
   }
 };
 
