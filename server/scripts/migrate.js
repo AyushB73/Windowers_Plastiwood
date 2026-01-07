@@ -5,6 +5,9 @@ const createTables = async () => {
   try {
     console.log('🚀 Starting database migration...');
 
+    // Wait a bit for database to be ready
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     // Users table
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS users (
@@ -223,11 +226,11 @@ const createTables = async () => {
     console.log('   Owner: username=pramod, password=admin123');
     console.log('   Staff: username=staff, password=staff123');
     
-    process.exit(0);
+    return true;
   } catch (error) {
     console.error('❌ Migration failed:', error);
-    process.exit(1);
+    return false;
   }
 };
 
-createTables();
+module.exports = { createTables };

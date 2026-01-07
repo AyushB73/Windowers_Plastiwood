@@ -6,6 +6,7 @@ const path = require('path');
 require('dotenv').config();
 
 const { testConnection } = require('./config/database');
+const { createTables } = require('./scripts/migrate');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -95,7 +96,16 @@ app.use('/api/*', (req, res) => {
 const startServer = async () => {
   try {
     // Test database connection
+    console.log('🔗 Testing database connection...');
     await testConnection();
+    
+    // Run migration
+    console.log('🗄️ Running database migration...');
+    const migrationSuccess = await createTables();
+    
+    if (!migrationSuccess) {
+      console.log('⚠️ Migration failed, but continuing to start server...');
+    }
     
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
