@@ -1,6 +1,6 @@
 // API Configuration
 const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://your-backend-url.railway.app/api'  // Replace with your Railway backend URL
+  ? 'https://windowers-plastiwood-backend.railway.app/api'  // Replace with your actual Railway backend URL
   : 'http://localhost:3001/api';
 
 // Get auth token from localStorage

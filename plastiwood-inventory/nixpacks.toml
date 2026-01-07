@@ -3,13 +3,15 @@ nixPkgs = ['nodejs-18_x', 'npm-9_x']
 
 [phases.install]
 cmds = [
-  'npm ci --prefix server',
-  'npm ci',
-  'npm run build'
+  'cd server && npm ci',
+  'npm ci'
 ]
 
 [phases.build]
-cmds = ['echo "Build completed"']
+cmds = [
+  'npm run build',
+  'cd server && npm run migrate'
+]
 
 [start]
 cmd = 'cd server && npm start'
